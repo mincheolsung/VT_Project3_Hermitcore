@@ -816,7 +816,7 @@ int put(char *key, void *value, size_t value_len)
 {
 	int ret = 0;
 	uhyve_put_t uhyve_args = {(char *)virt_to_phys((size_t) key), (void *)virt_to_phys((size_t) value), value_len, (int *)virt_to_phys((size_t)&ret)};
- 	uhyve_send(UHYVE_PORT_PUT, (unsigned)virt_to_phys((size_t)&uhyve_args));
+	uhyve_send(UHYVE_PORT_PUT, (unsigned)virt_to_phys((size_t)&uhyve_args));
 
 	return (-1 * ret);
 }

@@ -13,9 +13,9 @@ void* thread_func(void* arg)
 	char val[3000];
 	char out_val[3000];
 	unsigned long len = 0;
-	
+
 	printf("Hello Thread!!! id = %d\n", id);
-	
+
 	memset(val,'C', 3000);
 
 	strcpy(key, "mincheol");
@@ -40,7 +40,7 @@ int main(int argc, char** argv)
 
 	/* wait until all threads have terminated */
 	for(i=0; i<MAX_THREADS; i++)
-		pthread_join(threads[i], NULL);	
+		pthread_join(threads[i], NULL);
 
 	return 0;
 }

@@ -762,7 +762,7 @@ static int project3_put(char *key, void *value, size_t value_len)
 	char ret[4];
 	int res;
 	//printf("put key: %s val: %s, len: %llu\n", key, (char *)value, value_len);
-	
+
 	/* give your shared memory an id, anything will do */
 	key_t shm_key_key = 123456;
 	key_t shm_key_value = 123457;
@@ -786,7 +786,7 @@ static int project3_put(char *key, void *value, size_t value_len)
 
 	/* copy buffer to shared memory */
 	memcpy(shared_memory_key, key, strlen(key));
-	
+
 	/* setup shared memory for return */
 	if ((shmid_return = shmget(shm_key_return, sizeof(int), IPC_CREAT | 0666)) < 0)
 	{
@@ -835,10 +835,10 @@ static int project3_put(char *key, void *value, size_t value_len)
 	/* detach and remove shared memory */
 	shmdt(shmid_key);
 	shmctl(shmid_key, IPC_RMID, NULL);
-	
+
 	shmdt(shmid_return);
 	shmctl(shmid_return, IPC_RMID, NULL);
-	
+
 	if (value_len > 0)
 	{
 		shmdt(shmid_value);
@@ -916,7 +916,7 @@ static int project3_get(char *key, void *value, size_t *value_len)
 	{
 		printf("Error attaching shared memory id (return)\n");
 		exit(1);
-	}	
+	}
 
 
 	/* copy key to shared memory */
@@ -1092,10 +1092,10 @@ static int vcpu_loop(void)
 					uhyve_lseek->offset = lseek(uhyve_lseek->fd, uhyve_lseek->offset, uhyve_lseek->whence);
 					break;
 				}
-	
+
 			case UHYVE_PORT_PUT: {
 					unsigned data = *((unsigned*)((size_t)run+run->io.data_offset));
-		     		uhyve_put_t* uhyve_put = (uhyve_put_t*) (guest_mem+data);
+					uhyve_put_t* uhyve_put = (uhyve_put_t*) (guest_mem+data);
 					*(guest_mem+(size_t)uhyve_put->ret) = project3_put(guest_mem+(size_t)uhyve_put->key, guest_mem+(size_t)uhyve_put->value, uhyve_put->value_len);
 
 					break;
