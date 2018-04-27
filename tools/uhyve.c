@@ -817,14 +817,13 @@ static int project3_put(char *key, void *value, size_t value_len)
 		}
 
 		memcpy(shared_memory_value, value, value_len);
-
-		int res2 = system("python /home/mincheol/project3/project3.py put");
+		int res2 = system("python ../../../proxy.py put");
 		if (res2 != 0)
 			printf("proxy returns: %d\n", res2);
 	}
 	else if (value_len == 0)
 	{
-		int res = system("python /home/mincheol/project3/project3.py delete");
+		int res = system("python ../../../proxy.py delete");
 		if (res != 0)
 			printf("proxy returns: %d\n", res);
 	}
@@ -921,7 +920,7 @@ static int project3_get(char *key, void *value, size_t *value_len)
 
 	/* copy key to shared memory */
 	memcpy(shared_memory_key, key, strlen(key));
-	int res2 = system("python /home/mincheol/project3/project3.py get");
+	int res2 = system("python ../../../proxy.py get");
 	if (res2 != 0)
 		printf("proxy returns: %d\n", res2);
 
