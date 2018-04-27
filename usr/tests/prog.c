@@ -4,7 +4,7 @@
 #include <string.h>
 #include <pthread.h>
 
-#define MAX_THREADS 4
+#define MAX_THREADS 1
 
 void* thread_func(void* arg)
 {
@@ -17,10 +17,12 @@ void* thread_func(void* arg)
 	printf("Hello Thread!!! id = %d\n", id);
 
 	memset(val,'C', 3000);
-
 	strcpy(key, "mincheol");
 
 	printf("put returns: %d\n", put(key, val, 3000));
+	printf("get returns: %d\n", get(key, out_val, &len));
+	printf("put returns: %d\n", put(key, val, 0));
+	printf("put returns: %d\n", put(key, val, 0));
 	return 0;
 }
 
