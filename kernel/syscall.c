@@ -155,7 +155,7 @@ typedef struct {
 typedef struct {
 	int fd;
 	char* buf;
-        size_t len;
+	size_t len;
 	ssize_t ret;
 } __attribute__((packed)) uhyve_read_t;
 
@@ -804,4 +804,35 @@ int sys_kill(tid_t dest, int signum)
 int sys_signal(signal_handler_t handler)
 {
 	return hermit_signal(handler);
+}
+
+typedef struct {
+	char *key;
+	void *value;
+	size_t value_len;
+	int *ret;
+} __attribute__((packed)) uhyve_put_t;
+int put(char *key, void *value, size_t value_len)
+{
+	int ret = 0;
+	uhyve_put_t uhyve_args = {(char *)virt_to_phys((size_t) key), (void *)virt_to_phys((size_t) value), value_len, (int *)virt_to_phys((size_t)&ret)};
+ 	uhyve_send(UHYVE_PORT_PUT, (unsigned)virt_to_phys((size_t)&uhyve_args));
+
+	return (-1 * ret);
+}
+
+typedef struct {
+	char *key;
+	void *value;
+	size_t *value_len;
+	int *ret;
+} __attribute__((packed)) uhyve_get_t;
+
+int get(char *key, void *value, size_t *value_len)
+{
+	int ret = 0;
+	uhyve_get_t uhyve_args = {(char *)virt_to_phys((size_t) key), (void *)virt_to_phys((size_t) value), (void *)virt_to_phys((size_t) value_len), (int *)virt_to_phys((size_t)&ret)};
+	uhyve_send(UHYVE_PORT_GET, (unsigned)virt_to_phys((size_t)&uhyve_args));
+	LOG_INFO("%d\n",ret);
+	return (-1 * ret);
 }

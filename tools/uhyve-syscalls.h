@@ -27,7 +27,9 @@ typedef enum {
 	UHYVE_PORT_CLOSE	= 0x501,
 	UHYVE_PORT_READ		= 0x502,
 	UHYVE_PORT_EXIT		= 0x503,
-	UHYVE_PORT_LSEEK	= 0x504
+	UHYVE_PORT_LSEEK	= 0x504,
+	UHYVE_PORT_PUT		= 0x509,
+	UHYVE_PORT_GET		= 0x50a
 } uhyve_syscall_t;
 
 typedef struct {
@@ -61,4 +63,17 @@ typedef struct {
 	int whence;
 } __attribute__((packed)) uhyve_lseek_t;
 
+typedef struct {
+	char *key;
+	void *value;
+	size_t value_len;
+	int *ret;
+} __attribute__((packed)) uhyve_put_t;
+
+typedef struct {
+	char *key;
+	void *value;
+	size_t *value_len;
+	int *ret;
+} __attribute__((packed)) uhyve_get_t;
 #endif // UHYVE_SYSCALLS_H

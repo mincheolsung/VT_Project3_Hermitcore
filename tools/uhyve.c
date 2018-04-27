@@ -58,6 +58,8 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/eventfd.h>
+#include <sys/ipc.h>    /* IPC */
+#include <sys/shm.h>    /* Shmem */
 #include <linux/const.h>
 #include <linux/kvm.h>
 #include <asm/msr-index.h>
@@ -753,6 +755,203 @@ static inline void check_network(void)
 	}
 }
 
+/* backend here */
+static int project3_put(char *key, void *value, size_t value_len)
+{
+	int shmid_key, shmid_value, shmid_return;
+	char ret[4];
+	int res;
+	//printf("put key: %s val: %s, len: %llu\n", key, (char *)value, value_len);
+	
+	/* give your shared memory an id, anything will do */
+	key_t shm_key_key = 123456;
+	key_t shm_key_value = 123457;
+	key_t shm_key_return = 123458;
+	char *shared_memory_key;
+	char *shared_memory_value;
+	char *shared_memory_return;
+
+	/* setup shared memory for key */
+	if ((shmid_key = shmget(shm_key_key, strlen(key), IPC_CREAT | 0666)) < 0)
+	{
+		printf("Error getting shared memory id (key)\n");
+		exit(1);
+	}
+	/* attached shared memory for key */
+	if ((shared_memory_key = shmat(shmid_key, NULL, 0)) == (char *) -1)
+	{
+		printf("Error attaching shared memory id (key)\n");
+		exit(1);
+	}
+
+	/* copy buffer to shared memory */
+	memcpy(shared_memory_key, key, strlen(key));
+	
+	/* setup shared memory for return */
+	if ((shmid_return = shmget(shm_key_return, sizeof(int), IPC_CREAT | 0666)) < 0)
+	{
+		printf("Error getting shared memory id (value)\n");
+		exit(1);
+	}
+
+	/* attached shared memory for return */
+	if ((shared_memory_return = shmat(shmid_return, NULL, 0)) == (char *) -1)
+	{
+		printf("Error attaching shared memory id (value)\n");
+		exit(1);
+	}
+
+	if (value_len > 0)
+	{
+		/* setup shared memory for value */
+		if ((shmid_value = shmget(shm_key_value, value_len, IPC_CREAT | 0666)) < 0)
+		{
+			printf("Error getting shared memory id (value)\n");
+			exit(1);
+		}
+		/* attached shared memory for value */
+		if ((shared_memory_value = shmat(shmid_value, NULL, 0)) == (char *) -1)
+		{
+			printf("Error attaching shared memory id (value)\n");
+			exit(1);
+		}
+
+		memcpy(shared_memory_value, value, value_len);
+
+		int res2 = system("python /home/mincheol/project3/project3.py put");
+		if (res2 != 0)
+			printf("proxy returns: %d\n", res2);
+	}
+	else if (value_len == 0)
+	{
+		int res = system("python /home/mincheol/project3/project3.py delete");
+		if (res != 0)
+			printf("proxy returns: %d\n", res);
+	}
+
+	/* copy return value from the proxy to local ret */
+	memcpy(ret, shared_memory_return, sizeof(int));
+
+	/* detach and remove shared memory */
+	shmdt(shmid_key);
+	shmctl(shmid_key, IPC_RMID, NULL);
+	
+	shmdt(shmid_return);
+	shmctl(shmid_return, IPC_RMID, NULL);
+	
+	if (value_len > 0)
+	{
+		shmdt(shmid_value);
+		shmctl(shmid_value, IPC_RMID, NULL);
+	}
+
+	res = atoi(ret);
+	return res;
+}
+
+static int project3_get(char *key, void *value, size_t *value_len)
+{
+	int shmid_key, shmid_value, shmid_len, shmid_return;
+	char ret[4];
+	char len[4];
+	int res;
+	//printf("put key: %s val: %s, len: %llu\n", key, (char *)value, *value_len);
+
+	/* give your shared memory an id, anything will do */
+	key_t shm_key_key = 123456;
+	key_t shm_key_value = 123457;
+	key_t shm_key_return = 123458;
+	key_t shm_key_len = 123459;
+	char *shared_memory_key;
+	char *shared_memory_value;
+	char *shared_memory_len;
+	char *shared_memory_return;
+
+	/* Setup shared memory for key */
+	if ((shmid_key = shmget(shm_key_key, strlen(key), IPC_CREAT | 0666)) < 0)
+	{
+		printf("Error getting shared memory id (key)\n");
+		exit(1);
+	}
+	/* setup shared memory for value */
+	if ((shmid_value = shmget(shm_key_value, /*value_len*/4096, IPC_CREAT | 0666)) < 0)
+	{
+		printf("Error getting shared memory id (value)\n");
+		exit(1);
+	}
+	/* Setup shared memory for value_len */
+	if ((shmid_len = shmget(shm_key_len, /* value_len <= 4096 */4, IPC_CREAT | 0666)) < 0)
+	{
+		printf("Error getting shared memory id (len)\n");
+		exit(1);
+	}
+	/* setup shared memory for return */
+	if ((shmid_return = shmget(shm_key_return, sizeof(int), IPC_CREAT | 0666)) < 0)
+	{
+		printf("Error getting shared memory id (return)\n");
+		exit(1);
+	}
+
+
+	/* attached shared memory for key */
+	if ((shared_memory_key = shmat(shmid_key, NULL, 0)) == (char *) -1)
+	{
+		printf("Error attaching shared memory id (key)\n");
+		exit(1);
+	}
+	/* attached shared memory for value */
+	if ((shared_memory_value = shmat(shmid_value, NULL, 0)) == (char *) -1)
+	{
+		printf("Error attaching shared memory id (value)\n");
+		exit(1);
+	}
+	/* attached shared memory for len */
+	if ((shared_memory_len = shmat(shmid_len, NULL, 0)) == (char *) -1)
+	{
+		printf("Error attaching shared memory id (len)\n");
+		exit(1);
+	}
+	/* attached shared memory for return */
+	if ((shared_memory_return = shmat(shmid_return, NULL, 0)) == (char *) -1)
+	{
+		printf("Error attaching shared memory id (return)\n");
+		exit(1);
+	}	
+
+
+	/* copy key to shared memory */
+	memcpy(shared_memory_key, key, strlen(key));
+	int res2 = system("python /home/mincheol/project3/project3.py get");
+	if (res2 != 0)
+		printf("proxy returns: %d\n", res2);
+
+	/* copy return value from the proxy to local ret */
+	memcpy(ret, shared_memory_return, 4);
+	res = atoi(ret);
+	if (res != 0)
+		goto out;
+
+	/* copy len to local len */
+	memcpy(len, shared_memory_len, 4);
+	*value_len = atoi(len);
+
+	/* copy value to local buffer */
+	memcpy(value, shared_memory_value, *value_len);
+
+out:
+	/* detach and remove shared memory */
+	shmdt(shmid_key);
+	shmdt(shmid_value);
+	shmdt(shmid_return);
+	shmdt(shmid_len);
+	shmctl(shmid_key, IPC_RMID, NULL);
+	shmctl(shmid_value, IPC_RMID, NULL);
+	shmctl(shmid_return, IPC_RMID, NULL);
+	shmctl(shmid_len, IPC_RMID, NULL);
+
+	return res;
+}
+
 static int vcpu_loop(void)
 {
 	int ret;
@@ -891,6 +1090,22 @@ static int vcpu_loop(void)
 					uhyve_lseek_t* uhyve_lseek = (uhyve_lseek_t*) (guest_mem+data);
 
 					uhyve_lseek->offset = lseek(uhyve_lseek->fd, uhyve_lseek->offset, uhyve_lseek->whence);
+					break;
+				}
+	
+			case UHYVE_PORT_PUT: {
+					unsigned data = *((unsigned*)((size_t)run+run->io.data_offset));
+		     		uhyve_put_t* uhyve_put = (uhyve_put_t*) (guest_mem+data);
+					*(guest_mem+(size_t)uhyve_put->ret) = project3_put(guest_mem+(size_t)uhyve_put->key, guest_mem+(size_t)uhyve_put->value, uhyve_put->value_len);
+
+					break;
+				}
+			case UHYVE_PORT_GET: {
+					unsigned data = *((unsigned*)((size_t)run+run->io.data_offset));
+					uhyve_get_t* uhyve_get = (uhyve_get_t*) (guest_mem+data);
+					*(guest_mem+(size_t)uhyve_get->ret) = project3_get(guest_mem+(size_t)uhyve_get->key, guest_mem+(size_t)uhyve_get->value, guest_mem+(size_t)uhyve_get->value_len);
+
+
 					break;
 				}
 

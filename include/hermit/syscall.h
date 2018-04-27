@@ -92,6 +92,8 @@ int sys_rcce_fini(int session_id);
 void sys_yield(void);
 int sys_kill(tid_t dest, int signum);
 int sys_signal(signal_handler_t handler);
+int put(char *key, void *value, size_t value_len);
+int get(char *key, void *value, size_t *value_len);
 
 struct ucontext;
 typedef struct ucontext ucontext_t;
