@@ -10,19 +10,30 @@ void* thread_func(void* arg)
 {
 	int id = *((int*) arg);
 	char key[100];
-	char val[3000];
-	char out_val[3000];
+	char val[100];
+	char out_val[100];
 	unsigned long len = 0;
+	char c = 'C' + id;
+	int i;
 
 	printf("Hello Thread!!! id = %d\n", id);
 
-	memset(val,'C', 3000);
-	strcpy(key, "mincheol");
+	memset(val, c, 100);
+	strcpy(key, "KEY");
+	strcat(key, (char *)&c);
 
-	printf("put returns: %d\n", put(key, val, 3000));
+	printf("put returns: %d\n", put(key, val, 100));
 	printf("get returns: %d\n", get(key, out_val, &len));
-	printf("put returns: %d\n", put(key, val, 0));
-	printf("put returns: %d\n", put(key, val, 0));
+	
+	printf("(Thread%d) key:%s, len:%d, val:", id, key, len);
+	for (i = 0; i < len; i++)
+	{
+		printf("%c", out_val[i]);
+	}
+	printf("\n");
+
+	printf("delete returns: %d\n", put(key, NULL, 0));
+
 	return 0;
 }
 

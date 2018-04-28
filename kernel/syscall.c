@@ -815,6 +815,15 @@ typedef struct {
 int put(char *key, void *value, size_t value_len)
 {
 	int ret = 0;
+
+	/* if key is NULL */
+	if (key == NULL)
+		return -1;
+
+	/* if value is NULL, and value_len is not 0 */
+	if (value == NULL && value_len != 0)
+		return -1;
+
 	uhyve_put_t uhyve_args = {(char *)virt_to_phys((size_t) key), (void *)virt_to_phys((size_t) value), value_len, (int *)virt_to_phys((size_t)&ret)};
 	uhyve_send(UHYVE_PORT_PUT, (unsigned)virt_to_phys((size_t)&uhyve_args));
 
@@ -831,6 +840,10 @@ typedef struct {
 int get(char *key, void *value, size_t *value_len)
 {
 	int ret = 0;
+
+	if (key == NULL || value == NULL || value_len == NULL)
+		return -3;
+
 	uhyve_get_t uhyve_args = {(char *)virt_to_phys((size_t) key), (void *)virt_to_phys((size_t) value), (void *)virt_to_phys((size_t) value_len), (int *)virt_to_phys((size_t)&ret)};
 	uhyve_send(UHYVE_PORT_GET, (unsigned)virt_to_phys((size_t)&uhyve_args));
 	LOG_INFO("%d\n",ret);

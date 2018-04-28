@@ -774,13 +774,15 @@ static int project3_put(char *key, void *value, size_t value_len)
 	if ((shmid_key = shmget(shm_key_key, strlen(key), IPC_CREAT | 0666)) < 0)
 	{
 		printf("Error getting shared memory id (key)\n");
-		exit(1);
+		res = 1;
+		goto out;
 	}
 	/* attached shared memory for key */
 	if ((shared_memory_key = shmat(shmid_key, NULL, 0)) == (char *) -1)
 	{
 		printf("Error attaching shared memory id (key)\n");
-		exit(1);
+		res = 1;
+		goto out;
 	}
 
 	/* copy buffer to shared memory */
@@ -790,14 +792,16 @@ static int project3_put(char *key, void *value, size_t value_len)
 	if ((shmid_return = shmget(shm_key_return, sizeof(int), IPC_CREAT | 0666)) < 0)
 	{
 		printf("Error getting shared memory id (value)\n");
-		exit(1);
+		res = 1;
+		goto out;
 	}
 
 	/* attached shared memory for return */
 	if ((shared_memory_return = shmat(shmid_return, NULL, 0)) == (char *) -1)
 	{
 		printf("Error attaching shared memory id (value)\n");
-		exit(1);
+		res = 1;
+		goto out;
 	}
 
 	if (value_len > 0)
@@ -806,30 +810,42 @@ static int project3_put(char *key, void *value, size_t value_len)
 		if ((shmid_value = shmget(shm_key_value, value_len, IPC_CREAT | 0666)) < 0)
 		{
 			printf("Error getting shared memory id (value)\n");
-			exit(1);
+			res = 1;
+			goto out;
 		}
 		/* attached shared memory for value */
 		if ((shared_memory_value = shmat(shmid_value, NULL, 0)) == (char *) -1)
 		{
 			printf("Error attaching shared memory id (value)\n");
-			exit(1);
+			res = 1;
+			goto out;
 		}
 
 		memcpy(shared_memory_value, value, value_len);
 		int res2 = system("python ../../../proxy.py put");
 		if (res2 != 0)
+		{
 			printf("proxy returns: %d\n", res2);
+			res = 1;
+			goto out;
+		}
 	}
 	else if (value_len == 0)
 	{
-		int res = system("python ../../../proxy.py delete");
-		if (res != 0)
-			printf("proxy returns: %d\n", res);
+		int res2 = system("python ../../../proxy.py delete");
+		if (res2 != 0)
+		{	
+			printf("proxy returns: %d\n", res2);
+			res = 1;
+			goto out;
+		}
 	}
 
 	/* copy return value from the proxy to local ret */
 	memcpy(ret, shared_memory_return, sizeof(int));
+	res = atoi(ret);
 
+out:
 	/* detach and remove shared memory */
 	shmdt(shmid_key);
 	shmctl(shmid_key, IPC_RMID, NULL);
@@ -843,7 +859,6 @@ static int project3_put(char *key, void *value, size_t value_len)
 		shmctl(shmid_value, IPC_RMID, NULL);
 	}
 
-	res = atoi(ret);
 	return res;
 }
 
@@ -864,29 +879,33 @@ static int project3_get(char *key, void *value, size_t *value_len)
 	char *shared_memory_len;
 	char *shared_memory_return;
 
-	/* Setup shared memory for key */
+	/* setup shared memory for key */
 	if ((shmid_key = shmget(shm_key_key, strlen(key), IPC_CREAT | 0666)) < 0)
 	{
 		printf("Error getting shared memory id (key)\n");
-		exit(1);
+		res = 3;
+		goto out;
 	}
 	/* setup shared memory for value */
 	if ((shmid_value = shmget(shm_key_value, /*value_len*/4096, IPC_CREAT | 0666)) < 0)
 	{
 		printf("Error getting shared memory id (value)\n");
-		exit(1);
+		res = 3;
+		goto out;
 	}
-	/* Setup shared memory for value_len */
+	/* setup shared memory for value_len */
 	if ((shmid_len = shmget(shm_key_len, /* value_len <= 4096 */4, IPC_CREAT | 0666)) < 0)
 	{
 		printf("Error getting shared memory id (len)\n");
-		exit(1);
+		res = 3;
+		goto out;
 	}
 	/* setup shared memory for return */
 	if ((shmid_return = shmget(shm_key_return, sizeof(int), IPC_CREAT | 0666)) < 0)
 	{
 		printf("Error getting shared memory id (return)\n");
-		exit(1);
+		res = 3;
+		goto out;
 	}
 
 
@@ -894,34 +913,40 @@ static int project3_get(char *key, void *value, size_t *value_len)
 	if ((shared_memory_key = shmat(shmid_key, NULL, 0)) == (char *) -1)
 	{
 		printf("Error attaching shared memory id (key)\n");
-		exit(1);
+		res = 3;
+		goto out;
 	}
 	/* attached shared memory for value */
 	if ((shared_memory_value = shmat(shmid_value, NULL, 0)) == (char *) -1)
 	{
 		printf("Error attaching shared memory id (value)\n");
-		exit(1);
+		res = 3;
+		goto out;
 	}
 	/* attached shared memory for len */
 	if ((shared_memory_len = shmat(shmid_len, NULL, 0)) == (char *) -1)
 	{
 		printf("Error attaching shared memory id (len)\n");
-		exit(1);
+		res = 3;
+		goto out;
 	}
 	/* attached shared memory for return */
 	if ((shared_memory_return = shmat(shmid_return, NULL, 0)) == (char *) -1)
 	{
 		printf("Error attaching shared memory id (return)\n");
-		exit(1);
+		res = 3;
+		goto out;
 	}
-
 
 	/* copy key to shared memory */
 	memcpy(shared_memory_key, key, strlen(key));
 	int res2 = system("python ../../../proxy.py get");
 	if (res2 != 0)
+	{
 		printf("proxy returns: %d\n", res2);
-
+		res = 3;
+		goto out;
+	}
 	/* copy return value from the proxy to local ret */
 	memcpy(ret, shared_memory_return, 4);
 	res = atoi(ret);
