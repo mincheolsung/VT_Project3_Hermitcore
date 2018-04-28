@@ -755,13 +755,12 @@ static inline void check_network(void)
 	}
 }
 
-/* backend here */
+/* frontend here */
 static int project3_put(char *key, void *value, size_t value_len)
 {
 	int shmid_key, shmid_value, shmid_return;
 	char ret[4];
 	int res;
-	//printf("put key: %s val: %s, len: %llu\n", key, (char *)value, value_len);
 
 	/* give your shared memory an id, anything will do */
 	key_t shm_key_key = 123456;
@@ -854,7 +853,6 @@ static int project3_get(char *key, void *value, size_t *value_len)
 	char ret[4];
 	char len[4];
 	int res;
-	//printf("put key: %s val: %s, len: %llu\n", key, (char *)value, *value_len);
 
 	/* give your shared memory an id, anything will do */
 	key_t shm_key_key = 123456;
