@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <hermit/syscall.h>
+//#include <hermit/stdlib.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
 
-#define MAX_THREADS 1
+#define MAX_THREADS 4
 
 void* thread_func(void* arg)
 {
@@ -15,7 +16,7 @@ void* thread_func(void* arg)
 	unsigned long len = 0;
 	char c = 'C' + id;
 	int i;
-
+	//char *val = palloc(100, VMA_USER);
 	printf("Hello Thread!!! id = %d\n", id);
 
 	memset(val, c, 100);

@@ -52,8 +52,6 @@
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -191,6 +189,8 @@ static pthread_barrier_t barrier;
 static __thread struct kvm_run *run = NULL;
 static __thread int vcpufd = -1;
 static __thread uint32_t cpuid = 0;
+
+static pthread_mutex_t project3_lock;
 
 static uint64_t memparse(const char *ptr)
 {
@@ -770,6 +770,8 @@ static int project3_put(char *key, void *value, size_t value_len)
 	char *shared_memory_value;
 	char *shared_memory_return;
 
+	pthread_mutex_lock(&project3_lock);
+
 	/* setup shared memory for key */
 	if ((shmid_key = shmget(shm_key_key, strlen(key), IPC_CREAT | 0666)) < 0)
 	{
@@ -859,6 +861,7 @@ out:
 		shmctl(shmid_value, IPC_RMID, NULL);
 	}
 
+	pthread_mutex_unlock(&project3_lock);
 	return res;
 }
 
@@ -878,6 +881,8 @@ static int project3_get(char *key, void *value, size_t *value_len)
 	char *shared_memory_value;
 	char *shared_memory_len;
 	char *shared_memory_return;
+
+	pthread_mutex_lock(&project3_lock);
 
 	/* setup shared memory for key */
 	if ((shmid_key = shmget(shm_key_key, strlen(key), IPC_CREAT | 0666)) < 0)
@@ -971,6 +976,7 @@ out:
 	shmctl(shmid_return, IPC_RMID, NULL);
 	shmctl(shmid_len, IPC_RMID, NULL);
 
+	pthread_mutex_unlock(&project3_lock);
 	return res;
 }
 
@@ -1572,6 +1578,9 @@ int uhyve_init(char *path)
 		if (netfd < 0)
 			err(1, "unable to initialized network");
 	}
+
+	if (pthread_mutex_init(&project3_lock, NULL) != 0)
+		printf("project3_lock init failed\n");
 
 	return ret;
 }
