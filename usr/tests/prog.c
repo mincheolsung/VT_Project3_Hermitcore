@@ -5,7 +5,7 @@
 #include <string.h>
 #include <pthread.h>
 
-#define MAX_THREADS 4
+#define MAX_THREADS 8
 
 void* thread_func(void* arg)
 {

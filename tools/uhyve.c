@@ -259,6 +259,8 @@ static void uhyve_exit(void* arg)
 	}
 
 	close_fd(&vcpufd);
+
+	pthread_mutex_destroy(&project3_lock);
 }
 
 static void uhyve_atexit(void)
