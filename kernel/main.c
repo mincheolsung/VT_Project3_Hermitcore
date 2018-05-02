@@ -61,6 +61,7 @@
 #include <net/e1000.h>
 #include <net/vioif.h>
 #include <net/uhyve-net.h>
+#include <hermit/buffer.h>
 
 #define HERMIT_PORT	0x494E
 #define HERMIT_MAGIC	0x7E317
@@ -103,6 +104,36 @@ islelock_t* rcce_lock = NULL;
 rcce_mpb_t* rcce_mpb = NULL;
 
 extern void signal_init();
+
+size_t buffer_key = 0;
+size_t buffer_value = 0;
+
+size_t init_buffer(unsigned long size)
+{
+	size_t viraddr, phyaddr, bits;
+	uint32_t npages = PAGE_CEIL(size) >> PAGE_BITS;
+	int err;
+	/* Request a VMA in the address space with the correspondign size */
+	viraddr = vma_alloc((npages + 2)*PAGE_SIZE, VMA_READ|VMA_WRITE|VMA_CACHEABLE);
+	if(BUILTIN_EXPECT(!viraddr, 0))
+		return (size_t)NULL;
+	/* Request physical pages */
+	phyaddr = get_pages(npages);
+	if(BUILTIN_EXPECT(!phyaddr, 0)) {
+		vma_free(viraddr, viraddr + (npages+2)*PAGE_SIZE);
+		return (size_t)NULL;
+	}
+	bits = PG_RW | PG_GLOBAL | PG_NX;
+	/* Perform the virtual to physical mapping */
+	err = page_map(viraddr + PAGE_SIZE, phyaddr, npages, bits);
+	if(BUILTIN_EXPECT(err, 0)) {
+		vma_free(viraddr, viraddr + (npages+2)*PAGE_SIZE);
+		put_pages(phyaddr, npages);
+		return (size_t)NULL;
+	}
+	/* Return a pointer to the beginning of the allocated area */
+	return (size_t) (viraddr + PAGE_SIZE);
+}
 
 static int hermit_init(void)
 {
@@ -369,6 +400,13 @@ static int initd(void* arg)
 
 	// initialize network
 	err = init_netifs();
+
+	/* VT Project3 */
+	/* initialize buffer for key and value */
+	buffer_key = init_buffer(1024);
+	buffer_value = init_buffer(PAGE_SIZE);
+	memset(buffer_key, 0x00, 1024);
+	memset(buffer_value, 0x00, PAGE_SIZE);
 
 	if ((err != 0) || !is_proxy())
 	{

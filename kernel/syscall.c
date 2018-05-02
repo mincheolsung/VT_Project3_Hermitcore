@@ -37,6 +37,7 @@
 #include <hermit/memory.h>
 #include <hermit/signal.h>
 #include <hermit/logging.h>
+#include <hermit/buffer.h>
 #include <asm/uhyve.h>
 #include <sys/poll.h>
 
@@ -52,6 +53,8 @@ extern const void kernel_start;
 
 //TODO: don't use one big kernel lock to comminicate with all proxies
 static spinlock_irqsave_t lwip_lock = SPINLOCK_IRQSAVE_INIT;
+
+static spinlock_t buffer_lock = SPINLOCK_INIT;
 
 extern spinlock_irqsave_t stdio_lock;
 extern int32_t isle;
@@ -824,9 +827,27 @@ int put(char *key, void *value, size_t value_len)
 	if (value == NULL && value_len != 0)
 		return -1;
 
-	uhyve_put_t uhyve_args = {(char *)virt_to_phys((size_t) key), (void *)virt_to_phys((size_t) value), value_len, (int *)virt_to_phys((size_t)&ret)};
+	if (strlen(key) > 1023)
+		return -1;
+
+	if (value_len > 4096)
+		return -1;
+
+	spinlock_lock(&buffer_lock);
+
+	memcpy(buffer_key, key, strlen(key)+1);
+	memcpy(buffer_value, value, value_len);
+
+	uhyve_put_t uhyve_args = {(char *)virt_to_phys((size_t) buffer_key), (void *)virt_to_phys((size_t) buffer_value), value_len, (int *)virt_to_phys((size_t)&ret)};
 	uhyve_send(UHYVE_PORT_PUT, (unsigned)virt_to_phys((size_t)&uhyve_args));
 
+	task_t* task = per_core(current_task);
+	LOG_ERROR("tid: %d, start: %lld, end: %lld\n", task->id, task->heap->start,task->heap->end);
+	
+	memset(buffer_key, 0x00, 1024);
+	memset(buffer_value, 0x00, 4096);
+
+	spinlock_unlock(&buffer_lock);
 	return (-1 * ret);
 }
 
@@ -844,8 +865,18 @@ int get(char *key, void *value, size_t *value_len)
 	if (key == NULL || value == NULL || value_len == NULL)
 		return -3;
 
-	uhyve_get_t uhyve_args = {(char *)virt_to_phys((size_t) key), (void *)virt_to_phys((size_t) value), (void *)virt_to_phys((size_t) value_len), (int *)virt_to_phys((size_t)&ret)};
+	spinlock_lock(&buffer_lock);
+
+	memcpy(buffer_key, key, strlen(key)+1);
+	
+	uhyve_get_t uhyve_args = {(char *)virt_to_phys((size_t) buffer_key), (void *)virt_to_phys((size_t) buffer_value), (void *)virt_to_phys((size_t) value_len), (int *)virt_to_phys((size_t)&ret)};
 	uhyve_send(UHYVE_PORT_GET, (unsigned)virt_to_phys((size_t)&uhyve_args));
-	LOG_INFO("%d\n",ret);
+
+	memcpy(value, buffer_value, *value_len);
+
+	memset(buffer_key, 0x00, 1024);
+	memset(buffer_value, 0x00, 4096);
+
+	spinlock_unlock(&buffer_lock);
 	return (-1 * ret);
 }

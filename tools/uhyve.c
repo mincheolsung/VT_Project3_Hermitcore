@@ -190,8 +190,6 @@ static __thread struct kvm_run *run = NULL;
 static __thread int vcpufd = -1;
 static __thread uint32_t cpuid = 0;
 
-static pthread_mutex_t project3_lock;
-
 static uint64_t memparse(const char *ptr)
 {
 	// local pointer to end of parsed string
@@ -259,8 +257,6 @@ static void uhyve_exit(void* arg)
 	}
 
 	close_fd(&vcpufd);
-
-	pthread_mutex_destroy(&project3_lock);
 }
 
 static void uhyve_atexit(void)
@@ -772,8 +768,6 @@ static int project3_put(char *key, void *value, size_t value_len)
 	char *shared_memory_value;
 	char *shared_memory_return;
 
-	pthread_mutex_lock(&project3_lock);
-
 	/* setup shared memory for key */
 	if ((shmid_key = shmget(shm_key_key, strlen(key), IPC_CREAT | 0666)) < 0)
 	{
@@ -829,7 +823,7 @@ static int project3_put(char *key, void *value, size_t value_len)
 		int res2 = system("python ../../../proxy.py put");
 		if (res2 != 0)
 		{
-			printf("proxy returns: %d\n", res2);
+			//printf("proxy returns: %d\n", res2);
 			res = 1;
 			goto out;
 		}
@@ -839,7 +833,7 @@ static int project3_put(char *key, void *value, size_t value_len)
 		int res2 = system("python ../../../proxy.py delete");
 		if (res2 != 0)
 		{	
-			printf("proxy returns: %d\n", res2);
+			//printf("proxy returns: %d\n", res2);
 			res = 1;
 			goto out;
 		}
@@ -863,7 +857,6 @@ out:
 		shmctl(shmid_value, IPC_RMID, NULL);
 	}
 
-	pthread_mutex_unlock(&project3_lock);
 	return res;
 }
 
@@ -883,8 +876,6 @@ static int project3_get(char *key, void *value, size_t *value_len)
 	char *shared_memory_value;
 	char *shared_memory_len;
 	char *shared_memory_return;
-
-	pthread_mutex_lock(&project3_lock);
 
 	/* setup shared memory for key */
 	if ((shmid_key = shmget(shm_key_key, strlen(key), IPC_CREAT | 0666)) < 0)
@@ -950,7 +941,7 @@ static int project3_get(char *key, void *value, size_t *value_len)
 	int res2 = system("python ../../../proxy.py get");
 	if (res2 != 0)
 	{
-		printf("proxy returns: %d\n", res2);
+		//printf("proxy returns: %d\n", res2);
 		res = 3;
 		goto out;
 	}
@@ -978,7 +969,6 @@ out:
 	shmctl(shmid_return, IPC_RMID, NULL);
 	shmctl(shmid_len, IPC_RMID, NULL);
 
-	pthread_mutex_unlock(&project3_lock);
 	return res;
 }
 
@@ -1580,9 +1570,6 @@ int uhyve_init(char *path)
 		if (netfd < 0)
 			err(1, "unable to initialized network");
 	}
-
-	if (pthread_mutex_init(&project3_lock, NULL) != 0)
-		printf("project3_lock init failed\n");
 
 	return ret;
 }
