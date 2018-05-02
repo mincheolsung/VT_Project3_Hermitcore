@@ -54,7 +54,7 @@ extern const void kernel_start;
 //TODO: don't use one big kernel lock to comminicate with all proxies
 static spinlock_irqsave_t lwip_lock = SPINLOCK_IRQSAVE_INIT;
 
-static spinlock_t buffer_lock = SPINLOCK_INIT;
+static spinlock_t project3_lock = SPINLOCK_INIT;
 
 extern spinlock_irqsave_t stdio_lock;
 extern int32_t isle;
@@ -833,8 +833,9 @@ int put(char *key, void *value, size_t value_len)
 	if (value_len > 4096)
 		return -1;
 
-	spinlock_lock(&buffer_lock);
+	spinlock_lock(&project3_lock);
 
+	/* copy key, value to buffer_key, buffer_value which are contiguous buffer */
 	memcpy(buffer_key, key, strlen(key)+1);
 	memcpy(buffer_value, value, value_len);
 
@@ -847,7 +848,7 @@ int put(char *key, void *value, size_t value_len)
 	memset(buffer_key, 0x00, 1024);
 	memset(buffer_value, 0x00, 4096);
 
-	spinlock_unlock(&buffer_lock);
+	spinlock_unlock(&project3_lock);
 	return (-1 * ret);
 }
 
@@ -865,18 +866,20 @@ int get(char *key, void *value, size_t *value_len)
 	if (key == NULL || value == NULL || value_len == NULL)
 		return -3;
 
-	spinlock_lock(&buffer_lock);
+	spinlock_lock(&project3_lock);
 
+	/* copy key to buffer_key which is contiguous buffer */
 	memcpy(buffer_key, key, strlen(key)+1);
 	
 	uhyve_get_t uhyve_args = {(char *)virt_to_phys((size_t) buffer_key), (void *)virt_to_phys((size_t) buffer_value), (void *)virt_to_phys((size_t) value_len), (int *)virt_to_phys((size_t)&ret)};
 	uhyve_send(UHYVE_PORT_GET, (unsigned)virt_to_phys((size_t)&uhyve_args));
 
+	/* copy buffer_value to value which is user buffer */
 	memcpy(value, buffer_value, *value_len);
 
 	memset(buffer_key, 0x00, 1024);
 	memset(buffer_value, 0x00, 4096);
 
-	spinlock_unlock(&buffer_lock);
+	spinlock_unlock(&project3_lock);
 	return (-1 * ret);
 }
