@@ -404,7 +404,17 @@ static int initd(void* arg)
 	/* VT Project3 */
 	/* initialize buffer for key and value */
 	buffer_key = init_buffer(1024);
+	if (buffer_key == NULL)
+	{
+		LOG_ERROR("buffer_key allocation fails\n");
+		return -1;
+	}
 	buffer_value = init_buffer(PAGE_SIZE);
+	if (buffer_value == NULL)
+	{
+		LOG_ERROR("buffer_value allocation fails\n");
+		return -1;
+	}
 	memset(buffer_key, 0x00, 1024);
 	memset(buffer_value, 0x00, PAGE_SIZE);
 
