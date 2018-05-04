@@ -845,15 +845,15 @@ static int project3_put(char *key, void *value, size_t value_len)
 
 out:
 	/* detach and remove shared memory */
-	shmdt(shmid_key);
+	shmdt(shared_memory_key);
 	shmctl(shmid_key, IPC_RMID, NULL);
 
-	shmdt(shmid_return);
+	shmdt(shared_memory_return);
 	shmctl(shmid_return, IPC_RMID, NULL);
 
 	if (value_len > 0)
 	{
-		shmdt(shmid_value);
+		shmdt(shared_memory_value);
 		shmctl(shmid_value, IPC_RMID, NULL);
 	}
 
@@ -960,10 +960,10 @@ static int project3_get(char *key, void *value, size_t *value_len)
 
 out:
 	/* detach and remove shared memory */
-	shmdt(shmid_key);
-	shmdt(shmid_value);
-	shmdt(shmid_return);
-	shmdt(shmid_len);
+	shmdt(shared_memory_key);
+	shmdt(shared_memory_value);
+	shmdt(shared_memory_return);
+	shmdt(shared_memory_len);
 	shmctl(shmid_key, IPC_RMID, NULL);
 	shmctl(shmid_value, IPC_RMID, NULL);
 	shmctl(shmid_return, IPC_RMID, NULL);
