@@ -5,7 +5,7 @@ CFLAGS=
 LDFLAGS= -pthread
 PROXY=/opt/hermit/bin/proxy
 MEM=4G
-CPUS=4
+CPUS=8
 VERBOSE=0
 
 all: $(PROG)

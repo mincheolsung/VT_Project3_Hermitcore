@@ -4,7 +4,7 @@
 #include <string.h>
 #include <pthread.h>
 
-#define MAX_THREADS 4
+#define MAX_THREADS 8
 
 #define KEY_SIZE 1024
 #define VAL_SIZE 4096
