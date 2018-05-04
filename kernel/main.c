@@ -105,8 +105,8 @@ rcce_mpb_t* rcce_mpb = NULL;
 
 extern void signal_init();
 
-size_t buffer_key = 0;
-size_t buffer_value = 0;
+void *buffer_key = 0;
+void *buffer_value = 0;
 
 size_t init_buffer(unsigned long size)
 {
@@ -403,13 +403,13 @@ static int initd(void* arg)
 
 	/* VT Project3 */
 	/* initialize buffer for key and value */
-	buffer_key = init_buffer(1024);
+	buffer_key = (void *)init_buffer(1024);
 	if (buffer_key == NULL)
 	{
 		LOG_ERROR("buffer_key allocation fails\n");
 		return -1;
 	}
-	buffer_value = init_buffer(PAGE_SIZE);
+	buffer_value = (void *)init_buffer(PAGE_SIZE);
 	if (buffer_value == NULL)
 	{
 		LOG_ERROR("buffer_value allocation fails\n");
