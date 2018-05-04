@@ -1123,7 +1123,7 @@ static int vcpu_loop(void)
 			case UHYVE_PORT_GET: {
 					unsigned data = *((unsigned*)((size_t)run+run->io.data_offset));
 					uhyve_get_t* uhyve_get = (uhyve_get_t*) (guest_mem+data);
-					*(guest_mem+(size_t)uhyve_get->ret) = project3_get(guest_mem+(size_t)uhyve_get->key, guest_mem+(size_t)uhyve_get->value, guest_mem+(size_t)uhyve_get->value_len);
+					*(guest_mem+(size_t)uhyve_get->ret) = project3_get(guest_mem+(size_t)uhyve_get->key, guest_mem+(size_t)uhyve_get->value, (size_t *)(guest_mem+(size_t)uhyve_get->value_len));
 
 
 					break;
